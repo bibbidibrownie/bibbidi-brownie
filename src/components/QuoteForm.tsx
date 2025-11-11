@@ -112,73 +112,108 @@ export default function QuoteForm() {
 
     setIsSubmitting(true);
 
-    // Montar mensagem do pedido
-    let message = `📋 NOVA SOLICITAÇÃO DE ORÇAMENTO\n\n`;
-    message += `👤 CLIENTE:\n`;
-    message += `Nome: ${formData.fullName}\n`;
-    message += `Email: ${formData.email}\n`;
-    message += `Telefone: ${formData.phone}\n`;
-    if (formData.eventDate) message += `Data do Evento: ${formData.eventDate}\n`;
-    
-    message += `\n🍫 PRODUTOS SOLICITADOS:\n`;
-    formData.selectedProducts.forEach(product => {
-      if (product === "Outros" && formData.otherProduct) {
-        message += `• ${formData.otherProduct}\n`;
-      } else {
-        message += `• ${product}\n`;
-        const details = formData.productDetails[product];
-        if (details) {
-          if (details.quantity) message += `  Quantidade: ${details.quantity}\n`;
-          if (details.flavor) message += `  Sabor: ${details.flavor}\n`;
-        }
-      }
-    });
+    try {
+      // Preparar dados formatados para o email
+      const emailData = {
+        // Informações do Cliente
+        "Nome Completo": formData.fullName,
+        "Email": formData.email,
+        "Telefone": formData.phone,
+        "Data do Evento": formData.eventDate || "Não informado",
+        
+        // Produtos Solicitados
+        "Produtos": formData.selectedProducts.map(product => {
+          if (product === "Outros" && formData.otherProduct) {
+            return formData.otherProduct;
+          }
+          const details = formData.productDetails[product];
+          let productInfo = product;
+          if (details) {
+            if (details.quantity) productInfo += ` - Quantidade: ${details.quantity}`;
+            if (details.flavor) productInfo += ` - Sabor: ${details.flavor}`;
+          }
+          return productInfo;
+        }).join("; "),
+        
+        // Personalização
+        "Deseja Personalização": formData.wantsCustomization === "yes" ? "Sim" : "Não",
+        "Tipo de Personalização": formData.customizationType || "N/A",
+        "Descrição da Personalização": formData.customizationDescription || "N/A",
+        
+        // Entrega
+        "Método de Entrega": formData.deliveryMethod === "pickup" ? "Retirada no local" : "Entrega",
+        "Endereço de Entrega": formData.deliveryAddress || "N/A",
+        "CEP": formData.deliveryCep || "N/A",
+        "Número": formData.deliveryNumber || "N/A",
+        "Complemento": formData.deliveryComplement || "N/A",
+        "Bairro": formData.deliveryNeighborhood || "N/A",
+        "Cidade": formData.deliveryCity || "N/A",
+        "Data/Horário de Entrega": formData.deliveryDateTime || "Não informado",
+        
+        // Informações Adicionais
+        "Orçamento Estimado": formData.estimatedBudget || "Não informado",
+        "Observações": formData.observations || "Nenhuma",
+        "Como Conheceu": formData.howDidYouKnow || "Não informado",
+        
+        // Campo especial para o assunto do email
+        "_subject": `🍫 Novo Orçamento - ${formData.fullName}`,
+      };
 
-    if (formData.wantsCustomization === "yes") {
-      message += `\n🎨 PERSONALIZAÇÃO:\n`;
-      if (formData.customizationType) message += `Tipo: ${formData.customizationType}\n`;
-      if (formData.customizationDescription) message += `Descrição: ${formData.customizationDescription}\n`;
-    }
-
-    message += `\n🚚 ENTREGA:\n`;
-    message += `Método: ${formData.deliveryMethod === "pickup" ? "Retirada no local" : "Entrega"}\n`;
-    if (formData.deliveryMethod === "delivery") {
-      message += `Endereço: ${formData.deliveryAddress}\n`;
-      message += `CEP: ${formData.deliveryCep}\n`;
-      message += `Número: ${formData.deliveryNumber}\n`;
-      if (formData.deliveryComplement) message += `Complemento: ${formData.deliveryComplement}\n`;
-      message += `Bairro: ${formData.deliveryNeighborhood}\n`;
-      message += `Cidade: ${formData.deliveryCity}\n`;
-    }
-    if (formData.deliveryDateTime) message += `Data/Horário: ${formData.deliveryDateTime}\n`;
-
-    if (formData.estimatedBudget || formData.observations || formData.howDidYouKnow) {
-      message += `\n📝 INFORMAÇÕES ADICIONAIS:\n`;
-      if (formData.estimatedBudget) message += `Orçamento Estimado: ${formData.estimatedBudget}\n`;
-      if (formData.observations) message += `Observações: ${formData.observations}\n`;
-      if (formData.howDidYouKnow) message += `Como conheceu: ${formData.howDidYouKnow}\n`;
-    }
-
-    // Enviar para WhatsApp
-    const whatsappNumber = "5548988229812";
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-
-    // Google Analytics event
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'quote_form_submit', {
-        event_category: 'forms',
-        event_label: 'Quote Request',
-        value: 1
+      // Enviar para Formspree
+      const response = await fetch("https://formspree.io/f/mkgknvry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(emailData),
       });
+
+      if (!response.ok) {
+        throw new Error("Erro ao enviar orçamento");
+      }
+
+      // Google Analytics event
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'quote_form_submit', {
+          event_category: 'forms',
+          event_label: 'Quote Request',
+          value: 1
+        });
+      }
+
+      toast.success("Orçamento enviado com sucesso! Entraremos em contato em breve.");
+      
+      // Limpar formulário após sucesso
+      setFormData({
+        fullName: "",
+        email: "",
+        phone: "",
+        eventDate: "",
+        selectedProducts: [],
+        productDetails: {},
+        otherProduct: "",
+        wantsCustomization: "no",
+        customizationType: "",
+        customizationDescription: "",
+        deliveryMethod: "pickup",
+        deliveryAddress: "",
+        deliveryCep: "",
+        deliveryNumber: "",
+        deliveryComplement: "",
+        deliveryNeighborhood: "",
+        deliveryCity: "",
+        deliveryDateTime: "",
+        estimatedBudget: "",
+        observations: "",
+        howDidYouKnow: ""
+      });
+      
+    } catch (error) {
+      console.error("Erro ao enviar orçamento:", error);
+      toast.error("Erro ao enviar orçamento. Por favor, tente novamente ou entre em contato pelo WhatsApp.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Abrir WhatsApp
-    window.open(whatsappUrl, '_blank');
-
-    toast.success("Orçamento enviado! Você será redirecionado para o WhatsApp.");
-    
-    setIsSubmitting(false);
   };
 
   return (
