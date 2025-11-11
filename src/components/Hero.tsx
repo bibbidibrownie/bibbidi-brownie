@@ -1,5 +1,6 @@
 import { useState } from "react";
-import QuoteFormModal from "./QuoteFormModal";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import QuoteForm from "./QuoteForm";
 
 export default function Hero() {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
@@ -38,7 +39,19 @@ export default function Hero() {
                 Solicite seu Orçamento!
               </button>
             </div>
-            <QuoteFormModal open={isQuoteModalOpen} onOpenChange={setIsQuoteModalOpen} />
+            <Dialog open={isQuoteModalOpen} onOpenChange={setIsQuoteModalOpen}>
+              <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+                <DialogHeader className="px-6 pt-6">
+                  <DialogTitle className="text-3xl font-bold text-accent">
+                    Solicite seu Orçamento
+                  </DialogTitle>
+                  <DialogDescription className="text-base">
+                    Preencha o formulário abaixo e receba uma cotação personalizada!
+                  </DialogDescription>
+                </DialogHeader>
+                <QuoteForm onClose={() => setIsQuoteModalOpen(false)} />
+              </DialogContent>
+            </Dialog>
           </div>
           <div className="w-full max-w-md mx-auto md:max-w-none">
             <img 
