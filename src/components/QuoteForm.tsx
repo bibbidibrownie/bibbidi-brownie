@@ -182,18 +182,8 @@ export default function QuoteForm() {
   };
 
   return (
-    <section id="cotacao" className="py-20 bg-background">
-      <div className="container max-w-4xl">
-        <div className="text-center mb-12">
-          <h2 className="text-5xl md:text-6xl font-bold text-accent mb-4">
-            Solicite seu Orçamento
-          </h2>
-          <p className="text-xl text-muted-foreground">
-            Preencha o formulário abaixo e receba uma cotação personalizada!
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-8">
+    <div className="px-6 pb-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+      <form onSubmit={handleSubmit} className="space-y-6">
           {/* Seção 1: Informações do Cliente */}
           <Card>
             <CardHeader>
@@ -527,8 +517,7 @@ export default function QuoteForm() {
           <p className="text-center text-sm text-muted-foreground">
             * Campos obrigatórios. Ao enviar, você será redirecionado para o WhatsApp com todas as informações preenchidas.
           </p>
-        </form>
-      </div>
-    </section>
+      </form>
+    </div>
   );
 }
