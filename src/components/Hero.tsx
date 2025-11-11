@@ -37,12 +37,6 @@ export default function Hero() {
               >
                 Solicite seu Orçamento!
               </button>
-              <button
-                onClick={() => scrollToSection("contato")}
-                className="px-8 py-4 bg-accent text-accent-foreground rounded-full hover:opacity-90 transition-opacity font-medium text-lg shadow-md hover:shadow-lg"
-              >
-                Fale Conosco
-              </button>
             </div>
             <QuoteFormModal open={isQuoteModalOpen} onOpenChange={setIsQuoteModalOpen} />
           </div>
