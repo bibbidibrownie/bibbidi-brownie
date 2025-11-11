@@ -11,8 +11,11 @@ import { toast } from "sonner";
 
 interface ProductSelection {
   name: string;
-  quantity: string;
-  flavor: string;
+  items: Array<{
+    quantity: string;
+    flavor?: string;
+    packageSize?: string;
+  }>;
 }
 
 export default function QuoteForm() {
@@ -35,8 +38,8 @@ export default function QuoteForm() {
 
     // Seção 4: Entrega
     deliveryMethod: "pickup",
-    deliveryAddress: "",
     deliveryCep: "",
+    deliveryAddress: "",
     deliveryNumber: "",
     deliveryComplement: "",
     deliveryNeighborhood: "",
@@ -44,7 +47,6 @@ export default function QuoteForm() {
     deliveryDateTime: "",
 
     // Seção 5: Informações Adicionais
-    estimatedBudget: "",
     observations: "",
     howDidYouKnow: ""
   });
@@ -64,36 +66,117 @@ export default function QuoteForm() {
     "Outros"
   ];
 
-  const flavors = [
-    "Tradicional",
-    "Café",
-    "Meio-Amargo",
-    "Recheado - Doce de Leite",
-    "Recheado - Nutella",
-    "Recheado - Brigadeiro",
-    "Outros (especificar nas observações)"
-  ];
+  const getFlavorsByProduct = (product: string): string[] => {
+    if (product.includes("Brownie") || product.includes("Cake")) {
+      return ["Tradicional", "Café", "Meio Amargo", "Nutella", "Doce de Leite", "Caramelo Salgado", "Café com Caramelo"];
+    } else if (product.includes("Snack")) {
+      return ["Tradicional"];
+    } else if (product.includes("Cookie")) {
+      return ["Gotas de Chocolate", "Macadamia", "Macadamia Duplo Chocolate"];
+    }
+    return [];
+  };
 
   const handleProductToggle = (product: string) => {
     const newSelected = formData.selectedProducts.includes(product)
       ? formData.selectedProducts.filter(p => p !== product)
       : [...formData.selectedProducts, product];
     
-    setFormData({ ...formData, selectedProducts: newSelected });
+    // Inicializar com um item vazio quando selecionar
+    if (!formData.selectedProducts.includes(product)) {
+      setFormData({
+        ...formData,
+        selectedProducts: newSelected,
+        productDetails: {
+          ...formData.productDetails,
+          [product]: {
+            name: product,
+            items: [{ quantity: "", flavor: "", packageSize: "" }]
+          }
+        }
+      });
+    } else {
+      setFormData({ ...formData, selectedProducts: newSelected });
+    }
   };
 
-  const handleProductDetailChange = (product: string, field: keyof ProductSelection, value: string) => {
+  const handleAddProductItem = (product: string) => {
+    const currentDetails = formData.productDetails[product] || { name: product, items: [] };
     setFormData({
       ...formData,
       productDetails: {
         ...formData.productDetails,
         [product]: {
-          ...formData.productDetails[product],
-          name: product,
-          [field]: value
+          ...currentDetails,
+          items: [...currentDetails.items, { quantity: "", flavor: "", packageSize: "" }]
         }
       }
     });
+  };
+
+  const handleProductItemChange = (product: string, index: number, field: string, value: string) => {
+    const currentDetails = formData.productDetails[product];
+    const newItems = [...currentDetails.items];
+    newItems[index] = { ...newItems[index], [field]: value };
+    
+    setFormData({
+      ...formData,
+      productDetails: {
+        ...formData.productDetails,
+        [product]: {
+          ...currentDetails,
+          items: newItems
+        }
+      }
+    });
+  };
+
+  const handleRemoveProductItem = (product: string, index: number) => {
+    const currentDetails = formData.productDetails[product];
+    const newItems = currentDetails.items.filter((_, i) => i !== index);
+    
+    setFormData({
+      ...formData,
+      productDetails: {
+        ...formData.productDetails,
+        [product]: {
+          ...currentDetails,
+          items: newItems
+        }
+      }
+    });
+  };
+
+  const handleCepChange = async (cep: string) => {
+    setFormData({ ...formData, deliveryCep: cep });
+    
+    // Remove caracteres não numéricos
+    const cleanCep = cep.replace(/\D/g, '');
+    
+    if (cleanCep.length === 8) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await response.json();
+        
+        if (!data.erro) {
+          setFormData(prev => ({
+            ...prev,
+            deliveryAddress: data.logradouro || "",
+            deliveryNeighborhood: data.bairro || "",
+            deliveryCity: data.localidade || ""
+          }));
+        }
+      } catch (error) {
+        console.error("Erro ao buscar CEP:", error);
+      }
+    }
+  };
+
+  // Calcular data mínima (depois de amanhã)
+  const getMinDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 2);
+    return date.toISOString().split('T')[0];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,6 +197,23 @@ export default function QuoteForm() {
 
     try {
       // Preparar dados formatados para o email
+      const productsFormatted = formData.selectedProducts.map(product => {
+        if (product === "Outros" && formData.otherProduct) {
+          return formData.otherProduct;
+        }
+        const details = formData.productDetails[product];
+        if (details && details.items) {
+          return details.items.map((item, idx) => {
+            let info = `${product} #${idx + 1}`;
+            if (item.quantity) info += ` - Qtd: ${item.quantity}`;
+            if (item.flavor) info += ` - Sabor: ${item.flavor}`;
+            if (item.packageSize) info += ` - Tamanho: ${item.packageSize}`;
+            return info;
+          }).join("; ");
+        }
+        return product;
+      }).join("; ");
+
       const emailData = {
         // Informações do Cliente
         "Nome Completo": formData.fullName,
@@ -122,18 +222,7 @@ export default function QuoteForm() {
         "Data do Evento": formData.eventDate || "Não informado",
         
         // Produtos Solicitados
-        "Produtos": formData.selectedProducts.map(product => {
-          if (product === "Outros" && formData.otherProduct) {
-            return formData.otherProduct;
-          }
-          const details = formData.productDetails[product];
-          let productInfo = product;
-          if (details) {
-            if (details.quantity) productInfo += ` - Quantidade: ${details.quantity}`;
-            if (details.flavor) productInfo += ` - Sabor: ${details.flavor}`;
-          }
-          return productInfo;
-        }).join("; "),
+        "Produtos": productsFormatted,
         
         // Personalização
         "Deseja Personalização": formData.wantsCustomization === "yes" ? "Sim" : "Não",
@@ -142,8 +231,8 @@ export default function QuoteForm() {
         
         // Entrega
         "Método de Entrega": formData.deliveryMethod === "pickup" ? "Retirada no local" : "Entrega",
-        "Endereço de Entrega": formData.deliveryAddress || "N/A",
         "CEP": formData.deliveryCep || "N/A",
+        "Endereço de Entrega": formData.deliveryAddress || "N/A",
         "Número": formData.deliveryNumber || "N/A",
         "Complemento": formData.deliveryComplement || "N/A",
         "Bairro": formData.deliveryNeighborhood || "N/A",
@@ -151,7 +240,6 @@ export default function QuoteForm() {
         "Data/Horário de Entrega": formData.deliveryDateTime || "Não informado",
         
         // Informações Adicionais
-        "Orçamento Estimado": formData.estimatedBudget || "Não informado",
         "Observações": formData.observations || "Nenhuma",
         "Como Conheceu": formData.howDidYouKnow || "Não informado",
         
@@ -196,14 +284,13 @@ export default function QuoteForm() {
         customizationType: "",
         customizationDescription: "",
         deliveryMethod: "pickup",
-        deliveryAddress: "",
         deliveryCep: "",
+        deliveryAddress: "",
         deliveryNumber: "",
         deliveryComplement: "",
         deliveryNeighborhood: "",
         deliveryCity: "",
         deliveryDateTime: "",
-        estimatedBudget: "",
         observations: "",
         howDidYouKnow: ""
       });
@@ -223,7 +310,7 @@ export default function QuoteForm() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">1. Informações do Cliente</CardTitle>
-              <CardDescription>Dados para contato e confirmação do pedido</CardDescription>
+              <CardDescription className="text-accent">Dados para contato e confirmação do pedido</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -255,16 +342,17 @@ export default function QuoteForm() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="(48) 98822-9812"
+                    placeholder="(21) 99594-2928"
                     required
                   />
                 </div>
               </div>
               <div>
-                <Label htmlFor="eventDate">Data do Evento (se aplicável)</Label>
+                <Label htmlFor="eventDate">Data do Evento</Label>
                 <Input
                   id="eventDate"
                   type="date"
+                  min={getMinDate()}
                   value={formData.eventDate}
                   onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
                 />
@@ -276,7 +364,7 @@ export default function QuoteForm() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">2. Detalhes do Pedido</CardTitle>
-              <CardDescription>Selecione os produtos e quantidades desejadas</CardDescription>
+              <CardDescription className="text-accent">Selecione os produtos e quantidades desejadas</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -309,36 +397,84 @@ export default function QuoteForm() {
                     )}
                     
                     {formData.selectedProducts.includes(product) && product !== "Outros" && (
-                      <div className="ml-6 grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <Label htmlFor={`${product}-quantity`}>Quantidade</Label>
-                          <Input
-                            id={`${product}-quantity`}
-                            type="number"
-                            min="1"
-                            value={formData.productDetails[product]?.quantity || ""}
-                            onChange={(e) => handleProductDetailChange(product, "quantity", e.target.value)}
-                            placeholder="Ex: 50"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`${product}-flavor`}>Sabor/Recheio</Label>
-                          <Select
-                            value={formData.productDetails[product]?.flavor || ""}
-                            onValueChange={(value) => handleProductDetailChange(product, "flavor", value)}
-                          >
-                            <SelectTrigger id={`${product}-flavor`}>
-                              <SelectValue placeholder="Selecione o sabor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {flavors.map((flavor) => (
-                                <SelectItem key={flavor} value={flavor}>
-                                  {flavor}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                      <div className="ml-6 space-y-3">
+                        {formData.productDetails[product]?.items.map((item, index) => (
+                          <div key={index} className="border-l-2 border-accent pl-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-accent">Item {index + 1}</span>
+                              {index > 0 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveProductItem(product, index)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  Remover
+                                </Button>
+                              )}
+                            </div>
+                            
+                            {product === "Biscoitos Amanteigados" ? (
+                              <div>
+                                <Label>Tamanho do Pacotinho</Label>
+                                <Select
+                                  value={item.packageSize || ""}
+                                  onValueChange={(value) => handleProductItemChange(product, index, "packageSize", value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o tamanho" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="6 unidades">6 unidades</SelectItem>
+                                    <SelectItem value="8 unidades">8 unidades</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                  <Label>Quantidade</Label>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    value={item.quantity || ""}
+                                    onChange={(e) => handleProductItemChange(product, index, "quantity", e.target.value)}
+                                    placeholder="Ex: 50"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Sabor/Recheio</Label>
+                                  <Select
+                                    value={item.flavor || ""}
+                                    onValueChange={(value) => handleProductItemChange(product, index, "flavor", value)}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecione o sabor" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {getFlavorsByProduct(product).map((flavor) => (
+                                        <SelectItem key={flavor} value={flavor}>
+                                          {flavor}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddProductItem(product)}
+                          className="w-full"
+                        >
+                          + Adicionar outro sabor/quantidade
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -351,7 +487,7 @@ export default function QuoteForm() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">3. Personalização</CardTitle>
-              <CardDescription>Deseja alguma personalização especial?</CardDescription>
+              <CardDescription className="text-accent">Deseja alguma personalização especial?</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <RadioGroup
@@ -385,7 +521,7 @@ export default function QuoteForm() {
                       id="customizationDescription"
                       value={formData.customizationDescription}
                       onChange={(e) => setFormData({ ...formData, customizationDescription: e.target.value })}
-                      placeholder="Descreva em detalhes como você imagina a personalização..."
+                      placeholder="Descreva em detalhes como você gostaria da personalização"
                       rows={4}
                     />
                   </div>
@@ -398,7 +534,7 @@ export default function QuoteForm() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">4. Entrega</CardTitle>
-              <CardDescription>Como você prefere receber seu pedido?</CardDescription>
+              <CardDescription className="text-accent">Como você prefere receber seu pedido?</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <RadioGroup
@@ -417,6 +553,16 @@ export default function QuoteForm() {
 
               {formData.deliveryMethod === "delivery" && (
                 <div className="space-y-4 mt-4">
+                  <div>
+                    <Label htmlFor="deliveryCep">CEP *</Label>
+                    <Input
+                      id="deliveryCep"
+                      value={formData.deliveryCep}
+                      onChange={(e) => handleCepChange(e.target.value)}
+                      placeholder="00000-000"
+                      maxLength={9}
+                    />
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="md:col-span-2">
                       <Label htmlFor="deliveryAddress">Endereço</Label>
@@ -428,17 +574,6 @@ export default function QuoteForm() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="deliveryCep">CEP</Label>
-                      <Input
-                        id="deliveryCep"
-                        value={formData.deliveryCep}
-                        onChange={(e) => setFormData({ ...formData, deliveryCep: e.target.value })}
-                        placeholder="88000-000"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
                       <Label htmlFor="deliveryNumber">Número</Label>
                       <Input
                         id="deliveryNumber"
@@ -447,6 +582,8 @@ export default function QuoteForm() {
                         placeholder="123"
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="deliveryComplement">Complemento</Label>
                       <Input
@@ -472,7 +609,7 @@ export default function QuoteForm() {
                       id="deliveryCity"
                       value={formData.deliveryCity}
                       onChange={(e) => setFormData({ ...formData, deliveryCity: e.target.value })}
-                      placeholder="Florianópolis"
+                      placeholder="Rio de Janeiro"
                     />
                   </div>
                 </div>
@@ -494,18 +631,9 @@ export default function QuoteForm() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">5. Informações Adicionais</CardTitle>
-              <CardDescription>Ajude-nos a preparar o melhor orçamento para você</CardDescription>
+              <CardDescription className="text-accent">Ajude-nos a preparar o melhor orçamento para você</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="estimatedBudget">Orçamento Estimado (opcional)</Label>
-                <Input
-                  id="estimatedBudget"
-                  value={formData.estimatedBudget}
-                  onChange={(e) => setFormData({ ...formData, estimatedBudget: e.target.value })}
-                  placeholder="Ex: R$ 500,00"
-                />
-              </div>
               <div>
                 <Label htmlFor="observations">Observações / Pedidos Especiais</Label>
                 <Textarea
@@ -550,7 +678,7 @@ export default function QuoteForm() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground">
-            * Campos obrigatórios. Ao enviar, você será redirecionado para o WhatsApp com todas as informações preenchidas.
+            * Campos obrigatórios. Ao enviar, você receberá uma confirmação por email.
           </p>
       </form>
     </div>
