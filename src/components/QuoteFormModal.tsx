@@ -224,13 +224,15 @@ export default function QuoteFormModal({ trigger, open: controlledOpen, onOpenCh
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button size="lg" className="text-lg px-8 py-6">
-            Solicite seu Orçamento!
-          </Button>
-        )}
-      </DialogTrigger>
+      {!controlledOpen && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button size="lg" className="text-lg px-8 py-6">
+              Solicite seu Orçamento!
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-4xl max-h-[90vh] p-0">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle className="text-3xl font-bold text-accent">
