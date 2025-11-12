@@ -105,7 +105,7 @@ function ProductCard({ category }: { category: ProductCategory }) {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-4xl font-bold text-accent text-center mb-8">{category.title}</h3>
+      <h3 className="text-5xl md:text-6xl font-bold text-accent text-center mb-8">{category.title}</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {category.items.map((item, index) => (
           <Card 
@@ -193,11 +193,7 @@ export default function Products() {
           <ProductCard category={biscoitos} />
         </div>
 
-        <div className="mt-12 p-6 bg-card rounded-lg text-center">
-          <p className="text-sm text-muted-foreground">
-            * Os valores dos brownies quadrados já incluem embalagens personalizadas.
-          </p>
-        </div>
+
       </div>
     </section>
   );

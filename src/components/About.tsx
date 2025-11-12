@@ -41,7 +41,7 @@ export default function About() {
                 fazemos Cookies, Banoffe, Biscoitos e outras delícias sazonais.
               </p>
               <p>
-                Hoje, nossa produção fica na Tijuca e atendemos toda a Zona Norte e Zona Sul do Rio de Janeiro. Cada doce que sai daqui 
+                Nossa produção fica na Tijuca e atendemos todo o Brasil. Cada doce que sai daqui 
                 leva um pouco da nossa história — e a gente espera fazer parte da sua também.
               </p>
             </div>

@@ -29,7 +29,7 @@ export default function Hero() {
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground">
               Brownies, cookies e biscoitos artesanais feitos com carinho e os melhores ingredientes. 
-              Cada pedaço é uma experiência de puro prazer.
+              Cada pedaço, simplesmente irresistível.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center pt-4">
               <button
