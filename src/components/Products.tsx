@@ -32,17 +32,25 @@ const brownies: ProductCategory = {
     {
       name: "Grande (6x6 cm)",
       description: "Mínimo 15 unidades - Tradicional, Café, Meio-Amargo, Recheados",
-      price: "A partir de R$ 7,50"
+      price: "A partir de R$ 7,50",
+      image: "/brownie-grande.jpg",
+      images: [
+        "/brownie-grande.jpg",
+        "/brownie1.jpg",
+        "/brownie-ampliar.jpg"
+      ]
     },
     {
       name: "Cake - Pequeno (20 cm)",
       description: "Serve de 8 a 10 pessoas - Tradicional, Café, Meio-Amargo, Recheados",
-      price: "A partir de R$ 50,00"
+      price: "A partir de R$ 50,00",
+      image: "/cake-grande.jpg"
     },
     {
       name: "Cake - Grande (24 cm)",
       description: "Serve de 10 a 15 pessoas - Tradicional, Café, Meio-Amargo, Recheados",
-      price: "A partir de R$ 90,00"
+      price: "A partir de R$ 90,00",
+      image: "/cake-grande.jpg"
     },
     {
       name: "Snack",
@@ -59,12 +67,14 @@ const cookies: ProductCategory = {
     {
       name: "Cookie Grande",
       description: "Chocolate Belga, Chocolate Belga e Macadâmia, Macadâmia Duplo Chocolate",
-      price: "A partir de R$ 9,00"
+      price: "A partir de R$ 9,00",
+      image: "/cookie-grande.jpg"
     },
     {
       name: "Cookie Mini",
       description: "Chocolate Belga, Chocolate Belga e Macadâmia, Macadâmia Duplo Chocolate",
-      price: "A partir de R$ 5,00"
+      price: "A partir de R$ 5,00",
+      image: "/cookie-mini.jpg"
     }
   ]
 };
@@ -98,6 +108,23 @@ const personalizados: ProductCategory = {
         "/personalizados.jpg",
         "/personalizados2.jpg",
         "/personalizados3.jpg"
+      ]
+    }
+  ]
+};
+
+const sazonais: ProductCategory = {
+  title: "Sazonais",
+  items: [
+    {
+      name: "Páscoa, Natal, Dia das Mães...",
+      description: "Sempre temos um carinho especial com datas especiais!",
+      price: "Sob consulta",
+      image: "/mini-brownie.jpg",
+      images: [
+        "/mini-brownie.jpg",
+        "/sazonal-010101.jpg",
+        "/brownie-pascoa.jpg"
       ]
     }
   ]
@@ -250,6 +277,7 @@ export default function Products() {
           <ProductCard category={cookies} />
           <ProductCard category={biscoitos} />
           <ProductCard category={personalizados} />
+          <ProductCard category={sazonais} />
         </div>
 
 
