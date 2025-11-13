@@ -8,6 +8,7 @@ interface ProductItem {
   description?: string;
   price: string;
   image?: string;
+  images?: string[]; // Para galerias com múltiplas imagens
 }
 
 interface ProductCategory {
@@ -91,13 +92,20 @@ const personalizados: ProductCategory = {
       name: "Embalagens Personalizadas",
       description: "Brownies, Cookies, Biscoitos e mais! Todos os nossos produtos podem ter embalagens personalizadas para o seu evento ou presente. Consulte-nos e crie algo único!",
       price: "Sob consulta",
-      image: "/personalizados1.jpg"
+      image: "/personalizados1.jpg",
+      images: [
+        "/personalizados1.jpg",
+        "/personalizados.jpg",
+        "/personalizados2.jpg",
+        "/personalizados3.jpg"
+      ]
     }
   ]
 };
 
 function ProductCard({ category }: { category: ProductCategory }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleProductClick = (productName: string, categoryTitle: string) => {
     // Google Analytics event
@@ -163,11 +171,54 @@ function ProductCard({ category }: { category: ProductCategory }) {
                       <VisuallyHidden>
                         <DialogTitle>{item.name}</DialogTitle>
                       </VisuallyHidden>
-                      <img 
-                        src={item.image} 
-                        alt={item.name}
-                        className="w-full h-auto rounded-lg"
-                      />
+                      {item.images && item.images.length > 1 ? (
+                        <div className="relative">
+                          <img 
+                            src={item.images[currentImageIndex]} 
+                            alt={`${item.name} - Foto ${currentImageIndex + 1}`}
+                            className="w-full h-auto rounded-lg"
+                          />
+                          {/* Botões de navegação */}
+                          <button
+                            onClick={() => setCurrentImageIndex((prev) => 
+                              prev === 0 ? item.images!.length - 1 : prev - 1
+                            )}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-colors"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => setCurrentImageIndex((prev) => 
+                              prev === item.images!.length - 1 ? 0 : prev + 1
+                            )}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-colors"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                          </button>
+                          {/* Indicador de foto atual */}
+                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                            {item.images.map((_, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => setCurrentImageIndex(idx)}
+                                className={`w-2 h-2 rounded-full transition-colors ${
+                                  idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <img 
+                          src={item.image} 
+                          alt={item.name}
+                          className="w-full h-auto rounded-lg"
+                        />
+                      )}
                     </DialogContent>
                   </Dialog>
                 </div>
