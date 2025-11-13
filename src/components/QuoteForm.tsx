@@ -416,20 +416,32 @@ export default function QuoteForm() {
                             </div>
                             
                             {product === "Biscoitos Amanteigados" ? (
-                              <div>
-                                <Label>Tamanho do Pacotinho</Label>
-                                <Select
-                                  value={item.packageSize || ""}
-                                  onValueChange={(value) => handleProductItemChange(product, index, "packageSize", value)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o tamanho" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="6 unidades">6 unidades</SelectItem>
-                                    <SelectItem value="8 unidades">8 unidades</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                  <Label>Tamanho do Pacotinho *</Label>
+                                  <Select
+                                    value={item.packageSize || ""}
+                                    onValueChange={(value) => handleProductItemChange(product, index, "packageSize", value)}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecione o tamanho" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="6 unidades">6 unidades</SelectItem>
+                                      <SelectItem value="8 unidades">8 unidades</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label>Quantidade de Pacotes *</Label>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    value={item.quantity || ""}
+                                    onChange={(e) => handleProductItemChange(product, index, "quantity", e.target.value)}
+                                    placeholder="Ex: 10"
+                                  />
+                                </div>
                               </div>
                             ) : (
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
