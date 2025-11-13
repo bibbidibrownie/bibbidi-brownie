@@ -80,11 +80,18 @@ const biscoitos: ProductCategory = {
       name: "Pacotinho com 8 unidades",
       description: "Biscoitinhos amanteigados deliciosos",
       price: "R$ 9,50"
-    },
+    }
+  ]
+};
+
+const personalizados: ProductCategory = {
+  title: "Personalizados",
+  items: [
     {
-      name: "Personalizados",
-      description: "Formatos e temas personalizados - consulte-nos!",
-      price: "Sob consulta"
+      name: "Embalagens Personalizadas",
+      description: "Brownies, Cookies, Biscoitos e mais! Todos os nossos produtos podem ter embalagens personalizadas para o seu evento ou presente. Consulte-nos e crie algo único!",
+      price: "Sob consulta",
+      image: "/personalizados1.jpg"
     }
   ]
 };
@@ -191,6 +198,7 @@ export default function Products() {
           <ProductCard category={brownies} />
           <ProductCard category={cookies} />
           <ProductCard category={biscoitos} />
+          <ProductCard category={personalizados} />
         </div>
 
 
